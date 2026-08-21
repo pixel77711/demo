@@ -52,15 +52,15 @@ public class PrintCallbackConsumer {
             }
             printCallbackRepository.save(dbCallback);
 
-            // Find attendee by print job ID
-            // Note: In production, job ID should be linked to attendee during print request
-            // For this implementation, we need to query attendees by their print job ID
-            Attendee attendee = findAttendeeByPrintJobId(callback.getJobId());
+            // Find attendee by print job ID (now using proper repository query)
+            Optional<Attendee> attendeeOpt = attendeeRepository.findByPrintJobId(callback.getJobId());
             
-            if (attendee == null) {
+            if (!attendeeOpt.isPresent()) {
                 logger.warn("No attendee found for print job ID: {}", callback.getJobId());
                 return;
             }
+
+            Attendee attendee = attendeeOpt.get();
 
             // DUPLICATE-SCAN PROTECTION: Only update if still PENDING
             if (attendee.getCheckInStatus() != CheckInStatus.PENDING) {
@@ -87,15 +87,5 @@ public class PrintCallbackConsumer {
         } catch (Exception e) {
             logger.error("Error processing print callback: {}", e.getMessage(), e);
         }
-    }
-
-    /**
-     * Helper method to find attendee by print job ID
-     * In production, consider adding a direct query method to repository
-     */
-    private Attendee findAttendeeByPrintJobId(String jobId) {
-        // This is a placeholder - in real implementation, add:
-        // Optional<Attendee> findByPrintJobId(String printJobId) to AttendeeRepository
-        return null; // Will be implemented in next commit
     }
 }
